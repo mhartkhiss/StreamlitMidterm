@@ -172,6 +172,7 @@ def show_intro_and_overview():
         show_metrics(region_selection)
 
 # Function to display the Sales Over Time Line Chart
+
 def sales_over_time_chart():
     st.title("Sales Over Time")
     
@@ -186,20 +187,34 @@ def sales_over_time_chart():
     # Filter out rows where Year or Sales data is missing
     filtered_data = data[['Year', region_mapping[selected_region]]].dropna()
 
+    # Convert 'Year' column to integer type to avoid plotting errors
+    filtered_data['Year'] = filtered_data['Year'].astype(int)
+
+    # Aggregate sales by year (sum up the sales for each year)
+    aggregated_data = filtered_data.groupby('Year').sum().reset_index()
+
     # Create the line chart using Plotly
     fig_line = px.line(
-        filtered_data,
+        aggregated_data,
         x='Year',
         y=region_mapping[selected_region],
         labels={'Year': 'Year', region_mapping[selected_region]: 'Sales (in millions)'},
-        title=f"Sales Over Time for {selected_region}"
+        title=f"Sales Over Time for {selected_region}",
+        line_shape='linear'  # Ensures a smooth line plot
+    )
+
+    # Customize the chart layout for better appearance
+    fig_line.update_layout(
+        xaxis=dict(showgrid=False),  # Disable grid lines on the x-axis for cleaner look
+        yaxis=dict(showgrid=True),   # Enable grid lines on the y-axis
+        title_x=0.5  # Center the title
     )
 
     # Display the line chart
     st.plotly_chart(fig_line, use_container_width=True)
 
     # Add a dynamic description based on sales trends
-    sales_trend = filtered_data[region_mapping[selected_region]].diff().mean()
+    sales_trend = aggregated_data[region_mapping[selected_region]].diff().mean()
 
     # Dynamic trend description based on sales data
     if sales_trend > 0:
@@ -207,14 +222,12 @@ def sales_over_time_chart():
         Sales in {selected_region} show an **increasing trend** over time, indicating growing market demand or rising popularity 
         of video games in this region. This upward trend suggests that the gaming industry is becoming more lucrative in {selected_region},
         and could be driven by various factors such as increased console adoption, broader access to games, or a shift in gaming preferences.
-        This trend might also indicate expanding purchasing power or higher engagement from gamers in this region.
         """)
     elif sales_trend < 0:
         st.write(f"""
         Sales in {selected_region} show a **decreasing trend** over time, indicating a potential decline in the gaming market in this region.
         This could suggest that the gaming industry is maturing or even shrinking in {selected_region}, possibly due to market saturation, 
-        reduced consumer interest, or competition from other entertainment sources. It's also possible that other regions are overtaking 
-        {selected_region} in terms of gaming revenue, or that particular gaming platforms or genres are losing traction here.
+        reduced consumer interest, or competition from other entertainment sources.
         """)
     else:
         st.write(f"""
@@ -223,6 +236,7 @@ def sales_over_time_chart():
         and reliable consumer base in {selected_region}. This could indicate that gaming has become a regular form of entertainment here, 
         with consumers making predictable purchasing decisions over the years.
         """)
+
 
 
 # Data preparation for pie chart
